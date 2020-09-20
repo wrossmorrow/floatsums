@@ -18,7 +18,7 @@ Results experiment( int B , int N , int T , BinModel * M , Summer * S ) // , std
     float  * afc , * afd , * fwk , _fc , _fd;
     double * adc , * add , * dwk , _dc , _dd;
 
-    Results R = Results(B,N,T);
+    Results R = Results(B, N, T);
 
     srand(time(0)); 
 
@@ -95,6 +95,11 @@ Results experiment( int B , int N , int T , BinModel * M , Summer * S ) // , std
 
 }
 
+void print_help()
+{
+    std::cout << "floatsums help.\n";
+}
+
 int main( int argc , char * argv[] ) 
 {
 
@@ -107,8 +112,9 @@ int main( int argc , char * argv[] )
     BinModel * M = nullptr;
     Summer * S = nullptr;
     
-    while( ( opt = getopt(argc, argv, ":pvm:N:T:B:f:") ) != -1 ) {
+    while( ( opt = getopt(argc, argv, ":hpvm:N:T:B:f:") ) != -1 ) {
         switch(opt) {
+            case 'h': print_help(); exit(0);
             case 'p': method = 'p'; break;
             case 'v': verbose = true; break;
             case 'N': N = std::stoi( optarg ); break;
