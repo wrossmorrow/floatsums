@@ -745,33 +745,90 @@ $\pm$ 	& 7.98 & 27.10 & 3.55 & 18.50 & 100.00 & 0.00 & 100.00 & 0.00 \\
 
 \section{A Checkpoint Strategy}
 
-Actually, a guarantee of accuracy to cents of accumulations of {\em any} number of amounts $N$ gives us a guarantee for {\em every} accumulation size if we appropriately checkpoint our calculations. Technically what that means, for amounts in cents, is the following: Suppose that for some $\bar{N} > 0$ we have a guarantee that 
+Actually, a guarantee of accuracy to cents of accumulations of {\em any} number of amounts $N$ {\em may} give us a guarantee for {\em every} accumulation size, if we appropriately checkpoint our calculations. Technically what that means, for amounts in cents, is the following: Suppose that for some $\bar{N}_X > 0$, where the subscript $X$ denotes dependence on the random amounts, we have a guarantee that 
 \begin{align*}
 	\texttt{round}\left( \texttt{fl}\left( \sum_{n=1}^N \texttt{double}(x_n) \right) \right) =  \sum_{n=1}^N \texttt{long}(x_n)
-	\quad\text{for all}\quad N \leq \bar{N}
+	\quad\text{for all}\quad N \leq \bar{N}_X
 \end{align*}
-Then there is an algorithm ``$\texttt{sum}_N$'' computing the sum of any $N$ amounts $x_n$ (as \mintinline{c}{double}s) such that 
+Then is there an algorithm ``$\texttt{sum}_{N,X}$'' computing the sum of {\em any} $N$ amounts $x_n$ (as \mintinline{c}{double}s) such that 
 \begin{align*}
-	\texttt{round}\left( \texttt{sum}_N\left( x_1,\dotsc,x_N \right) \right) =  \sum_{n=1}^N \texttt{long}(x_n)
-	\quad\text{for all}\quad N. 
+	\texttt{round}\left( \texttt{sum}_{N,X}\left( x_1,\dotsc,x_N \right) \right) =  \sum_{n=1}^N \texttt{long}(x_n)
+	\quad\text{for all}\quad N?
 \end{align*}
 Technically, we avoid the possibility of overflow here for simplicity, but that would certainly come into play if this idea was taken to it's extremes. 
 
-It's pretty easy to just sketch out what that algorithm $\texttt{sum}_N$ would be, and it's basically an extended version of pairwise summation. Let $N \in \mathbb{N}$ and $\bar{N}$ be an accuracy-assuring bound, obviously with $N > \bar{N}$ or the claim is trivial. Let $B = \lfloor N/\bar{N} \rfloor$ and $R = N \mod \bar{N}$. We can break the amounts up into $B+1$ (or just $B$) ``blocks'' with sums
+The first step of such an algorithm is easy to envision, and seems like an extended version of pairwise summation. Let $N \in \mathbb{N}$ and $\bar{N}_X$ be an accuracy-assuring bound, obviously with $N > \bar{N}_X$ or algorithm is just summing up the amounts. Let $B = \lfloor N/\bar{N}_X \rfloor$ and $R = N \mod \bar{N}_X$. We can break the amounts up into $B+1$ (or just $B$, if $R=0$) ``blocks'' with sums
 \begin{align*}
 	S_b &= \texttt{round}\left( \texttt{fl}\left( \sum_{n=1}^{\bar{N}} \texttt{double}(x_{\bar{N}(b-1) + n}) \right) \right) \quad\quad b = 1,\dotsc,B \\
-	S_{B+1} &= \texttt{round}\left( \texttt{fl}\left( \sum_{n=1}^{R} \texttt{double}(x_{\bar{N}B + n}) \right) \right) \quad\quad \text{if } R > 0
+	S_{B+1} &= \left\{ \begin{aligned}
+			&\texttt{round}\left( \texttt{fl}\left( \sum_{n=1}^{R} \texttt{double}(x_{\bar{N}B + n}) \right) \right) &&\quad \text{if } R > 0 \\
+			&0 &&\quad \text{if } R = 0 \\
+		\end{aligned} \right .
 \end{align*}
-guaranteed to be accurate to the cents place. We then let these sums define a {\em new} set of amounts by casting to \mintinline{c}{long}s without loss as they are exact to the cents place, and repeat. That is: if $B+1 > \bar{N}$ (or $B > \bar{N}$ if $B \mod \bar{N} = 0$), break them up again, and compute a new set of sums exact to the cents place; if $B+1 < \bar{N}$ (or $B < \bar{N}$ if $B \mod \bar{N} = 0$), just sum them up. What's happening here is that at the end of any block-sum step using \mintinline{c}{double}s, we keep the part we know (from the accuracy bound) to be exact, and throw away the accumulated floating point roundoff error. We can then restart the process knowing that our amounts are exact to the significant digits we care about. 
+guaranteed to be accurate to the cents place. Probably obviously, we aim to let these sums define a {\em new} set of amounts by casting to \mintinline{c}{long}s and back to \mintinline{c}{float}s or \mintinline{c}{double}s without loss as they are exact to the cents place, and repeat. That is: if $B+1 > \bar{N}$ (or $B > \bar{N}$ if $B \mod \bar{N} = 0$), break them up again, and compute a new set of sums exact to the cents place; if $B+1 < \bar{N}$ (or $B < \bar{N}$ if $B \mod \bar{N} = 0$), just sum them up. 
 
-Requiring this sort of procedure with \mintinline{c}{double}s is probably pointless. They're just already guaranteed to be accurate for plausible accumulation sizes, using pairwise summation at least. 
+The problem is that the set of block sums $S_1,\dotsc,S_{B+1}$ does not have the same distribution as $X$, and thus will not have the same bound $\bar{N}$. 
 
-For what values of $N$ is the RHS guaranteed to be less than $0.5$, using cents? Clearly
+% What's happening here is that at the end of any block-sum step using \mintinline{c}{double}s, we keep the part we know (from the accuracy bound) to be exact, and throw away the accumulated floating point roundoff error. We can then restart the process knowing that our amounts are exact to the significant digits we care about. 
+
+Requiring this sort of procedure with \mintinline{c}{double}s and pairwise summation is probably pointless. They're just already guaranteed to be accurate for plausible accumulation sizes, using pairwise summation at least. 
+
+Recall that the LLN says that $\bar{X}_N \to \mathbb{E}X$ where $X$ is the random variable from which we draw amounts. The sequential summation error bound is more or less
 \begin{align*}
-    N \log_2 N < \frac{ 5 \times 10^{7} }{\mu}
-    \quad\iff\quad
-    N \log_2 N < 5 \times 10^{7 - \log_{10}\mu}
+    | E_N | \leq N_0(N_0-1)u \bar{X}_{N} \to N_0(N_0-1)u \mathbb{E}X \approx N_0^2 u \mu
 \end{align*}
+and our sufficient bounding implies
+\begin{align*}
+    \bar{N}_0 \approx \sqrt{ \frac{5 \times 10^{15}}{\mu} }
+    	= \frac{\sqrt{5} \times 10^{15/2}}{\sqrt{\mu}}
+\end{align*}
+We're clearly adding a ``$0$'' subscript here to start an iteration. 
+
+We can apply the same logic to the $N_1 \in \{B,B+1\}$ first stage block sums, and obtain
+\begin{align*}
+    | E_N | \leq N_1(N_1-1) u \bar{S}_N^{(1)} \to N_1(N_1-1) u \mathbb{E}S^{(1)} \approx N_1^2 u \mathbb{E}S^{(1)}
+\end{align*}
+Sufficient bounding implies
+\begin{align*}
+    \bar{N}_1 \approx \sqrt{ \frac{5 \times 10^{15}}{\mathbb{E}S^{(1)}} }
+    	= \frac{\sqrt{5} \times 10^{15/2}}{\sqrt{\mathbb{E}S^{(1)}}}
+\end{align*}
+The first stage sums are distributed like sums of $\bar{N}_0$ i.i.d. amounts: 
+\begin{align*}
+	S^{(1)} \sim \sum_{n=1}^{\bar{N}_0} X_n
+	\quad\quad\implies\quad\quad
+	\mathbb{E}S^{(1)} = \sum_{n=1}^{\bar{N}_0} \mathbb{E}X_n = \bar{N}_0 \mu
+\end{align*}
+Thus 
+\begin{align*}
+    \bar{N}_1 &\approx \frac{\sqrt{5} \times 10^{15/2}}{ \sqrt{\bar{N}_0}\sqrt{\mu} }
+    		= \frac{\bar{N}_0}{\sqrt{\bar{N}_0}} = \sqrt{\bar{N}_0}
+    	%&= \frac{\mu^{1/4}}{5^{1/4} \times 10^{15/4}}\frac{\sqrt{5} \times 10^{15/2}}{ \sqrt{\mu} }
+    	%= \frac{ 5^{1/2} }{ 5^{1/4} }\frac{ 10^{15/2} }{ 10^{15/4} }\frac{ \mu^{1/4} }{ \mu^{1/2} } \\
+    	%&= \left( \frac{ 5^{2} }{ 5 } \right)^{1/4} 
+	%	\left( \frac{ 10^{30} }{ 10^{15} } \right)^{1/4} 
+	%	\left( \frac{ \mu }{ \mu^{2} } \right)^{1/4}
+	= \left( \frac{ 5 \times 10^{15} }{ \mu } \right)^{1/4} 
+\end{align*}
+In other words, given an original bound $\bar{N}_0$, we should use a bound for the sums of sums of $\sqrt{\bar{N}_0}$. 
+
+Let's keep going, as the induction is pretty clear. The second stage sums (sums of sums), if any, are distributed like sums of $\bar{N}_1$ i.i.d. first-stage sums
+\begin{align*}
+	S^{(2)} \sim \sum_{n=1}^{\bar{N}_1} S_n^{(1)}
+	\quad\quad\implies\quad\quad
+	\mathbb{E}S^{(2)} = \sum_{n=1}^{\bar{N}_1} \mathbb{E}S_n^{(1)} = \bar{N}_1\mathbb{E}S^{(1)}
+\end{align*}
+and thus have a sufficient bound
+\begin{align*}
+    \bar{N}_2 \approx \left(  \frac{5 \times 10^{15}}{\mathbb{E}S^{(2)} } \right)^{1/2}
+    	= \sqrt{ \frac{5 \times 10^{15}}{\bar{N}_1\mathbb{E}S^{(1)} } }
+	= \frac{\bar{N}_1}{ \sqrt{\bar{N}_1} } 
+	= \sqrt{ \bar{N}_1 }
+	= \left( \frac{ 5 \times 10^{15} }{ \mu } \right)^{1/8} 
+\end{align*}
+This is probably enough to perceive the pattern: In a recursion where we compute block sums, then block sums of those, and so on, we should take the (floor of) the square root of the bound passed to a given level as the bound applicable to the next level. 
+
+All this is, of course, trusting that we can use the LLN to approximate sample averages by the underlying mean. And not just for the amounts, but for all their blocked sums too. 
 
 \section{Learnings}
 

@@ -150,6 +150,16 @@ public:
         }
     }
 
+    double mean() noexcept 
+    {
+        double m = 0.0;
+        for( int b = 0 ; b < this->bins ; b++ ) {
+            double p = ( b > 0 ? this->binp[b]-this->binp[b-1] : this->binp[b] );
+            m += p * ( (double)(this->binb[b]) + (double)(this->binb[b+1]) ) / 2.0;
+        }
+        return m;
+    }
+
     long draw() noexcept 
     {
         double r = random_u();

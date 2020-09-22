@@ -1,0 +1,18 @@
+#!/bin/bash
+
+[[ ! -f bin/floatsums ]] && bash compile
+
+T=500
+
+> results/bigseq.csv
+> results/bigblockseq.csv
+> results/tmp
+
+# 10000000 10000000  
+
+for N in 1000 10000 100000 1000000 4000000 4500000 5000000 ; do
+	./bin/floatsums -N $N -T $T -m models/big1bin.spc -v -f results/tmp
+	cat results/tmp >> results/bigseq.csv
+	./bin/floatsums -N $N -T $T -m models/big1bin.spc -v -b -f results/tmp
+	cat results/tmp >> results/bigblockseq.csv
+done

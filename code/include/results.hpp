@@ -9,9 +9,10 @@ public:
 
     char lbl[3] = {'+','-','?'};
     int fcc[3] = {0} , fdc[3]  = {0}, dcc[3]  = {0}, ddc[3] = {0};
-    int B , N , T;
+    int N , T;
+    bool B , F , D;
 
-    Results( int B , int N , int T ) : B{B},N{N},T{T} {}
+    Results( int N , int T , bool B , bool F , bool D ) : N{N},T{T},B{B},F{F},D{D} {}
 
     void write( const char * const fn , const char sl )
     {
@@ -22,7 +23,13 @@ public:
             file << this->T << ",";
             file << this->lbl[i] << ",";
             file << sl << ",";
-            file << (this->B < this->N ? 'y' : 'n') << ",";
+            file << (this->B ? 'y' : 'n') << ",";
+            if( this->B ) {
+                file << (this->F ? 'y' : 'n') << ",";
+                file << (this->D ? 'y' : 'n') << ",";
+            } else {
+                file << "-,-,";
+            }
             file.setf(ios::fixed, ios::floatfield); 
             file.precision(2); 
             file << 100.0*((double)this->fcc[i])/((double)T) << ",";
@@ -40,7 +47,9 @@ public:
             std::cout << this->T << ",";
             std::cout << this->lbl[i] << ",";
             std::cout << sl << ",";
-            std::cout << (this->B < this->N ? 'y' : 'n') << ",";
+            std::cout << (this->B ? 'y' : 'n') << ",";
+            std::cout << (this->F ? 'y' : 'n') << ",";
+            std::cout << (this->D ? 'y' : 'n') << ",";
             std::cout.setf(ios::fixed, ios::floatfield); 
             std::cout.precision(2); 
             std::cout.width(6);
